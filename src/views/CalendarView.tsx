@@ -39,6 +39,7 @@ export function CalendarView() {
   const { state, toggleCooked, moveMeal } = useStore()
   const [start, setStart] = useState(() => weekStart(new Date()))
   const [editing, setEditing] = useState<Meal | null>(null)
+  const [selectedIdx, setSelectedIdx] = useState(() => (new Date().getDay() + 6) % 7) // Mon-based
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -61,7 +62,14 @@ export function CalendarView() {
     const overId = e.over?.id
     const meal = e.active.data.current?.meal as Meal | undefined
     if (!overId || !meal || typeof overId !== 'string') return
-    const [, iso, slot] = overId.split('|')
+    const parts = overId.split('|')
+    if (parts[0] === 'day') {
+      // dropped on a day in the mobile strip → move to that day, keep the slot
+      const iso = parts[1]
+      if (iso && meal.date !== iso) moveMeal(meal.id, iso, meal.slot)
+      return
+    }
+    const [, iso, slot] = parts
     if (!iso || !slot) return
     if (meal.date !== iso || meal.slot !== slot) moveMeal(meal.id, iso, slot as Slot)
   }
@@ -133,52 +141,79 @@ export function CalendarView() {
         </div>
       </div>
 
-      {/* Mobile: stacked day cards */}
-      <div className="space-y-3 md:hidden">
-        {days.map((d) => {
+      {/* Mobile: horizontal day strip + selected-day detail */}
+      <div className="md:hidden">
+        <div className="mb-4 grid grid-cols-7 gap-1.5">
+          {days.map((d, i) => (
+            <DayPill
+              key={toISO(d)}
+              d={d}
+              selected={i === selectedIdx}
+              count={SLOTS.reduce((n, s) => n + mealsAt(toISO(d), s.id).length, 0)}
+              onSelect={() => setSelectedIdx(i)}
+            />
+          ))}
+        </div>
+
+        {(() => {
+          const d = days[selectedIdx] ?? days[0]
           const iso = toISO(d)
           const today = isToday(iso)
           const total = SLOTS.reduce((n, s) => n + mealsAt(iso, s.id).length, 0)
           return (
-            <div key={iso} className="panel">
+            <div className="panel overflow-hidden">
               <div
-                className={`flex items-center justify-between rounded-t-xl2 px-4 py-2.5 ${
-                  today ? 'bg-tomato text-paper' : 'bg-paper/60'
+                className={`flex items-center justify-between px-4 py-3.5 ${
+                  today ? 'bg-tomato text-paper' : 'bg-paper/70'
                 }`}
               >
-                <div className="flex items-baseline gap-2">
-                  <span className="font-display text-lg font-semibold capitalize">{dayName(d)}</span>
-                  <span className={today ? 'text-paper/80' : 'text-muted'}>{dayNum(d)}</span>
-                </div>
-                <span className={`text-xs ${today ? 'text-paper/80' : 'text-muted'}`}>{total} repas</span>
+                <span className="font-display text-xl font-semibold capitalize">
+                  {dayName(d)} {dayNum(d)}
+                </span>
+                <span className={`text-xs ${today ? 'text-paper/80' : 'text-muted'}`}>
+                  {total} repas
+                </span>
               </div>
               <div className="divide-y divide-line">
-                {SLOTS.map((slot) => (
-                  <DroppableCell
-                    key={slot.id}
-                    id={cellId('m', iso, slot.id)}
-                    className="flex items-stretch gap-3 px-4 py-2.5"
-                  >
-                    <div className="w-12 shrink-0 pt-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted">
-                      {slot.short}
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      {mealsAt(iso, slot.id).map((m) => (
-                        <DraggableMeal key={m.id} meal={m} onEdit={setEditing} onToggle={toggleCooked} />
-                      ))}
-                      <button
-                        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted transition-colors hover:bg-paper hover:text-tomato"
-                        onClick={() => openNew(iso, slot.id)}
-                      >
-                        <Plus size={14} /> Ajouter
-                      </button>
-                    </div>
-                  </DroppableCell>
-                ))}
+                {SLOTS.map((slot) => {
+                  const meals = mealsAt(iso, slot.id)
+                  return (
+                    <DroppableCell key={slot.id} id={cellId('m', iso, slot.id)} className="px-4 py-3.5">
+                      <div className="flex items-center justify-between">
+                        <span className="label">{slot.label}</span>
+                        <button
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-tomato"
+                          onClick={() => openNew(iso, slot.id)}
+                          aria-label="Ajouter un repas"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        {meals.length === 0 ? (
+                          <button
+                            className="w-full rounded-xl border border-dashed border-line py-3 text-sm text-muted transition-colors hover:border-tomato/40 hover:text-tomato"
+                            onClick={() => openNew(iso, slot.id)}
+                          >
+                            Rien de prévu — ajouter
+                          </button>
+                        ) : (
+                          meals.map((m) => (
+                            <DraggableMeal key={m.id} meal={m} onEdit={setEditing} onToggle={toggleCooked} />
+                          ))
+                        )}
+                      </div>
+                    </DroppableCell>
+                  )
+                })}
               </div>
             </div>
           )
-        })}
+        })()}
+
+        <p className="mt-3 text-center text-xs text-muted">
+          Astuce : maintenez un repas puis glissez-le sur un autre jour.
+        </p>
       </div>
 
       <MealEditor open={!!editing} meal={editing} onClose={() => setEditing(null)} />
@@ -253,6 +288,45 @@ function DroppableCell({
     >
       {children}
     </div>
+  )
+}
+
+function DayPill({
+  d,
+  selected,
+  count,
+  onSelect,
+}: {
+  d: Date
+  selected: boolean
+  count: number
+  onSelect: () => void
+}) {
+  const iso = toISO(d)
+  const today = isToday(iso)
+  const { setNodeRef, isOver } = useDroppable({ id: `day|${iso}` })
+  let cls = 'border-line bg-card text-ink'
+  if (today && selected) cls = 'border-tomato bg-tomato text-white'
+  else if (selected) cls = 'border-ink bg-ink text-white'
+  else if (today) cls = 'border-tomato/40 bg-tomato/5 text-tomato'
+  return (
+    <button
+      ref={setNodeRef}
+      onClick={onSelect}
+      className={`flex flex-col items-center rounded-2xl border py-2 transition-all active:scale-95 ${cls} ${
+        isOver ? 'ring-2 ring-tomato/60' : ''
+      }`}
+    >
+      <span className="text-[0.56rem] font-semibold uppercase tracking-wide opacity-75">
+        {dayName(d).slice(0, 3)}
+      </span>
+      <span className="font-display text-base font-semibold leading-tight">{dayNum(d)}</span>
+      <span
+        className={`mt-1 h-1 w-1 rounded-full ${
+          count > 0 ? (selected || today ? 'bg-current' : 'bg-tomato') : 'bg-transparent'
+        }`}
+      />
+    </button>
   )
 }
 
