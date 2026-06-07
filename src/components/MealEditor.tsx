@@ -120,7 +120,7 @@ export function MealEditor({ open, onClose, meal }: Props) {
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <label className="label">Nom du plat</label>
             <button
-              className="flex items-center gap-1 text-xs font-semibold text-herb transition-colors hover:text-[#3d4f33] disabled:opacity-40"
+              className="flex items-center gap-1 text-xs font-semibold text-herb transition-colors hover:text-[#138a58] disabled:opacity-40"
               onClick={onSaveAsDish}
               disabled={!canSave}
             >

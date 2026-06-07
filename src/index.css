@@ -16,43 +16,30 @@ html {
 
 body {
   margin: 0;
-  background-color: #f6efe2;
-  color: #221e18;
-  font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-feature-settings: 'ss01';
+  background-color: #f6f7f4;
+  color: #14181a;
+  font-family: 'General Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
-/* Warm paper atmosphere: layered radial washes */
+/* Clean, fresh atmosphere — two faint colour washes, no grain */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(120% 90% at 85% -10%, rgba(224, 160, 46, 0.16), transparent 55%),
-    radial-gradient(120% 90% at 0% 110%, rgba(76, 98, 64, 0.12), transparent 55%),
-    radial-gradient(90% 70% at 50% 50%, rgba(196, 69, 43, 0.05), transparent 70%);
-  pointer-events: none;
-}
-
-/* Grain overlay for paper texture */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
   z-index: -1;
-  opacity: 0.4;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background:
+    radial-gradient(55% 45% at 100% 0%, rgba(23, 166, 107, 0.07), transparent 70%),
+    radial-gradient(50% 45% at 0% 100%, rgba(255, 90, 60, 0.06), transparent 70%);
 }
 
 @layer base {
   h1, h2, h3, h4 {
-    font-family: 'Fraunces', serif;
-    font-optical-sizing: auto;
+    font-family: 'Cabinet Grotesk', 'General Sans', sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -62,27 +49,27 @@ body::after {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold
            transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-tomato text-paper shadow-soft hover:bg-[#a93a23] hover:shadow-lift;
+    @apply btn bg-tomato text-white shadow-soft hover:bg-[#ec4326] hover:shadow-lift;
   }
   .btn-ghost {
-    @apply btn border border-line bg-card/70 text-ink hover:border-ink/30 hover:bg-card;
+    @apply btn border border-line bg-card text-ink hover:border-ink/20 hover:bg-paper;
   }
   .btn-herb {
-    @apply btn bg-herb text-paper hover:bg-[#3d4f33];
+    @apply btn bg-herb text-white hover:bg-[#138a58];
   }
   .icon-btn {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-line bg-card/70
-           text-ink/70 transition-all hover:border-ink/30 hover:text-ink active:scale-95;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-line bg-card
+           text-ink/65 transition-all hover:border-ink/20 hover:bg-paper hover:text-ink active:scale-95;
   }
 
   .field {
-    @apply w-full rounded-xl border border-line bg-panel px-3.5 py-2.5 text-sm text-ink
+    @apply w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink
            outline-none transition-all placeholder:text-muted/70
-           focus:border-tomato/60 focus:bg-card focus:ring-2 focus:ring-tomato/15;
+           focus:border-tomato/70 focus:ring-2 focus:ring-tomato/15;
   }
 
   .chip {
@@ -90,7 +77,7 @@ body::after {
   }
 
   .label {
-    @apply text-[0.7rem] font-bold uppercase tracking-[0.16em] text-muted;
+    @apply text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted;
   }
 }
 
@@ -100,12 +87,12 @@ body::after {
   height: 11px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(34, 30, 24, 0.18);
-  border: 3px solid #f6efe2;
+  background: rgba(20, 24, 26, 0.14);
+  border: 3px solid #f6f7f4;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 30, 24, 0.3);
+  background: rgba(20, 24, 26, 0.26);
 }
 
 /* Reveal controls on hover only on devices with a real pointer.
@@ -119,8 +106,7 @@ body::after {
   }
 }
 
-/* Prevent iOS Safari from auto-zooming when focusing a form control
-   (triggers whenever the font-size is below 16px). */
+/* Prevent iOS Safari from auto-zooming when focusing a form control. */
 @media (max-width: 640px) {
   .field,
   input,
@@ -130,7 +116,7 @@ body::after {
   }
 }
 
-/* Safe-area helpers for notched phones (needs viewport-fit=cover) */
+/* Safe-area helper for notched phones (needs viewport-fit=cover) */
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
 }
