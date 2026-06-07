@@ -22,6 +22,7 @@ body {
   font-feature-settings: 'ss01';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 /* Warm paper atmosphere: layered radial washes */
@@ -105,4 +106,31 @@ body::after {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 30, 24, 0.3);
+}
+
+/* Reveal controls on hover only on devices with a real pointer.
+   On touch screens (no hover) they stay visible so they're usable. */
+@media (hover: hover) and (pointer: fine) {
+  .reveal {
+    opacity: 0;
+  }
+  .group:hover .reveal {
+    opacity: 1;
+  }
+}
+
+/* Prevent iOS Safari from auto-zooming when focusing a form control
+   (triggers whenever the font-size is below 16px). */
+@media (max-width: 640px) {
+  .field,
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Safe-area helpers for notched phones (needs viewport-fit=cover) */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
 }

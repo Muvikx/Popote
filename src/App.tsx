@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Refrigerator,
   ShoppingBasket,
+  BookMarked,
   Carrot,
   RotateCcw,
   LogOut,
@@ -15,11 +16,12 @@ import { useStore } from './store'
 import { CalendarView } from './views/CalendarView'
 import { FridgeView } from './views/FridgeView'
 import { ShoppingView } from './views/ShoppingView'
+import { DishesView } from './views/DishesView'
 import { LoginScreen } from './components/LoginScreen'
 import { computeShoppingList } from './lib/shopping'
 import { addDays, daysUntil, toISO } from './lib/date'
 
-type Tab = 'calendar' | 'fridge' | 'shopping'
+type Tab = 'calendar' | 'dishes' | 'fridge' | 'shopping'
 
 export default function App() {
   const { state, status, user, offline, login, logout, reload, resetAll } = useStore()
@@ -70,12 +72,13 @@ export default function App() {
 
   const tabs: { id: Tab; label: string; icon: typeof CalendarDays; badge?: number }[] = [
     { id: 'calendar', label: 'Calendrier', icon: CalendarDays },
+    { id: 'dishes', label: 'Plats', icon: BookMarked },
     { id: 'fridge', label: 'Frigo', icon: Refrigerator, badge: expiringCount },
     { id: 'shopping', label: 'Courses', icon: ShoppingBasket, badge: toBuyCount },
   ]
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-16 pt-6 sm:px-6">
+    <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-16">
       {/* Brand header */}
       <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -90,8 +93,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Segmented nav */}
-        <nav className="flex gap-1 self-start rounded-full border border-line bg-card p-1 shadow-soft sm:self-auto">
+        {/* Desktop segmented nav */}
+        <nav className="hidden gap-1 self-auto rounded-full border border-line bg-card p-1 shadow-soft sm:flex">
           {tabs.map((t) => {
             const active = tab === t.id
             const Icon = t.icon
@@ -99,7 +102,7 @@ export default function App() {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`relative flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors sm:px-4 ${
+                className={`relative flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors lg:px-4 ${
                   active ? 'text-paper' : 'text-muted hover:text-ink'
                 }`}
               >
@@ -111,7 +114,7 @@ export default function App() {
                   />
                 )}
                 <Icon size={16} />
-                <span className="hidden sm:inline">{t.label}</span>
+                <span>{t.label}</span>
                 {!!t.badge && t.badge > 0 && (
                   <span
                     className={`ml-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[0.7rem] font-bold ${
@@ -145,6 +148,7 @@ export default function App() {
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
             {tab === 'calendar' && <CalendarView />}
+            {tab === 'dishes' && <DishesView />}
             {tab === 'fridge' && <FridgeView />}
             {tab === 'shopping' && <ShoppingView />}
           </motion.div>
@@ -154,16 +158,20 @@ export default function App() {
       {/* Footer */}
       <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-line pt-5 text-xs text-muted sm:flex-row">
         <span className="flex items-center gap-2">
-          {user && <span>Connecté : <strong className="font-semibold text-ink/80">{user.email}</strong></span>}
+          {user && (
+            <span>
+              Connecté : <strong className="font-semibold text-ink/80">{user.email}</strong>
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-1">
           <button
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors hover:bg-card hover:text-tomato"
             onClick={() => {
-              if (confirm('Réinitialiser toutes les données (repas, frigo, courses) ?')) resetAll()
+              if (confirm('Tout effacer (repas, plats, frigo, courses) ?')) resetAll()
             }}
           >
-            <RotateCcw size={13} /> Réinitialiser
+            <RotateCcw size={13} /> Tout effacer
           </button>
           <button
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors hover:bg-card hover:text-ink"
@@ -173,6 +181,34 @@ export default function App() {
           </button>
         </div>
       </footer>
+
+      {/* Mobile bottom navigation */}
+      <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-card/95 backdrop-blur-md sm:hidden">
+        {tabs.map((t) => {
+          const active = tab === t.id
+          const Icon = t.icon
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className="relative flex flex-col items-center gap-0.5 py-2"
+            >
+              {active && <span className="absolute top-0 h-0.5 w-9 rounded-full bg-tomato" />}
+              <span className="relative">
+                <Icon size={21} className={active ? 'text-tomato' : 'text-muted'} />
+                {!!t.badge && t.badge > 0 && (
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-tomato px-1 text-[0.6rem] font-bold text-paper">
+                    {t.badge}
+                  </span>
+                )}
+              </span>
+              <span className={`text-[0.62rem] font-semibold ${active ? 'text-tomato' : 'text-muted'}`}>
+                {t.label}
+              </span>
+            </button>
+          )
+        })}
+      </nav>
     </div>
   )
 }

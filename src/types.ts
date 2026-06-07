@@ -49,6 +49,15 @@ export interface Meal {
   cooked?: boolean
 }
 
+/** A reusable dish saved to the library (no date/slot). */
+export interface Dish {
+  id: string
+  title: string
+  servings: number
+  ingredients: Ingredient[]
+  notes?: string
+}
+
 export type FridgeCategory =
   | 'Légumes'
   | 'Fruits'
@@ -91,6 +100,7 @@ export interface ShoppingItem {
 export interface AppState {
   meals: Meal[]
   fridge: FridgeItem[]
+  dishes: Dish[] // reusable dish library
   manualShopping: ShoppingItem[] // items added by hand
   checkedAuto: string[] // keys (name|unit) of auto-generated items ticked off
 }

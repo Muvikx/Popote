@@ -60,7 +60,9 @@ export function Modal({ open, onClose, title, subtitle, children, footer }: Moda
             <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
 
             {footer && (
-              <footer className="border-t border-line bg-card px-6 py-4">{footer}</footer>
+              <footer className="border-t border-line bg-card px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                {footer}
+              </footer>
             )}
           </motion.div>
         </motion.div>

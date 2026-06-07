@@ -46,6 +46,7 @@ export async function handlePutState(cookieHeader: string | null | undefined, bo
   await putState(await db(), {
     meals: b.meals ?? [],
     fridge: b.fridge ?? [],
+    dishes: b.dishes ?? [],
     manualShopping: b.manualShopping ?? [],
     checkedAuto: b.checkedAuto ?? [],
   })

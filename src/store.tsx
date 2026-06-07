@@ -1,8 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { AppState, FridgeItem, Meal, ShoppingItem, Unit } from './types'
+import type { AppState, Dish, FridgeItem, Meal, Slot, Unit } from './types'
 import { mergeIntoFridge, type DerivedShoppingItem } from './lib/shopping'
-import { addDays, toISO } from './lib/date'
 import { apiGetState, apiLogin, apiLogout, apiPutState } from './lib/api'
 
 const CACHE_KEY = 'popote:cache'
@@ -12,131 +11,13 @@ function uid() {
   return crypto.randomUUID()
 }
 
-const EMPTY: AppState = { meals: [], fridge: [], manualShopping: [], checkedAuto: [] }
-
-function seed(): AppState {
-  const today = new Date()
-  const day = (n: number) => toISO(addDays(today, n))
-  const tdISO = day(0)
-
-  const meals: Meal[] = [
-    {
-      id: uid(),
-      date: day(-2),
-      slot: 'diner',
-      title: 'Quiche lorraine',
-      servings: 4,
-      cooked: true,
-      ingredients: [
-        { id: uid(), name: 'Pâte brisée', qty: 1, unit: 'pièce' },
-        { id: uid(), name: 'Lardons', qty: 200, unit: 'g' },
-        { id: uid(), name: 'Œufs', qty: 3, unit: 'pièce' },
-        { id: uid(), name: 'Crème fraîche', qty: 200, unit: 'mL' },
-      ],
-    },
-    {
-      id: uid(),
-      date: day(-1),
-      slot: 'diner',
-      title: 'Soupe de potiron',
-      servings: 4,
-      cooked: true,
-      ingredients: [
-        { id: uid(), name: 'Potiron', qty: 1, unit: 'pièce' },
-        { id: uid(), name: 'Pomme de terre', qty: 2, unit: 'pièce' },
-        { id: uid(), name: 'Crème fraîche', qty: 100, unit: 'mL' },
-      ],
-    },
-    {
-      id: uid(),
-      date: tdISO,
-      slot: 'dejeuner',
-      title: 'Salade César au poulet',
-      servings: 2,
-      ingredients: [
-        { id: uid(), name: 'Filet de poulet', qty: 300, unit: 'g' },
-        { id: uid(), name: 'Salade romaine', qty: 1, unit: 'pièce' },
-        { id: uid(), name: 'Parmesan', qty: 50, unit: 'g' },
-        { id: uid(), name: 'Croûtons', qty: 1, unit: 'pièce' },
-      ],
-    },
-    {
-      id: uid(),
-      date: tdISO,
-      slot: 'diner',
-      title: 'Risotto aux champignons',
-      servings: 2,
-      notes: 'Bien remuer, ajouter le bouillon louche par louche.',
-      ingredients: [
-        { id: uid(), name: 'Riz arborio', qty: 250, unit: 'g' },
-        { id: uid(), name: 'Champignons de Paris', qty: 200, unit: 'g' },
-        { id: uid(), name: 'Oignon', qty: 1, unit: 'pièce' },
-        { id: uid(), name: 'Bouillon de légumes', qty: 1, unit: 'L' },
-        { id: uid(), name: 'Parmesan', qty: 50, unit: 'g' },
-      ],
-    },
-    {
-      id: uid(),
-      date: day(1),
-      slot: 'dejeuner',
-      title: 'Pâtes au pesto',
-      servings: 2,
-      ingredients: [
-        { id: uid(), name: 'Pâtes', qty: 200, unit: 'g' },
-        { id: uid(), name: 'Pesto', qty: 1, unit: 'pièce' },
-        { id: uid(), name: 'Tomates cerises', qty: 150, unit: 'g' },
-      ],
-    },
-    {
-      id: uid(),
-      date: day(1),
-      slot: 'diner',
-      title: 'Saumon & légumes rôtis',
-      servings: 2,
-      ingredients: [
-        { id: uid(), name: 'Pavé de saumon', qty: 2, unit: 'tranche' },
-        { id: uid(), name: 'Courgette', qty: 1, unit: 'pièce' },
-        { id: uid(), name: 'Carotte', qty: 3, unit: 'pièce' },
-        { id: uid(), name: "Huile d'olive", qty: 2, unit: 'c.à.s' },
-      ],
-    },
-    {
-      id: uid(),
-      date: day(2),
-      slot: 'diner',
-      title: 'Curry de pois chiches',
-      servings: 3,
-      ingredients: [
-        { id: uid(), name: 'Pois chiches', qty: 400, unit: 'g' },
-        { id: uid(), name: 'Lait de coco', qty: 400, unit: 'mL' },
-        { id: uid(), name: 'Pâte de curry', qty: 1, unit: 'c.à.s' },
-        { id: uid(), name: 'Riz basmati', qty: 200, unit: 'g' },
-      ],
-    },
-  ]
-
-  const fridge: FridgeItem[] = [
-    { id: uid(), name: 'Carotte', qty: 5, unit: 'pièce', category: 'Légumes', expiry: day(4) },
-    { id: uid(), name: 'Oignon', qty: 3, unit: 'pièce', category: 'Légumes' },
-    { id: uid(), name: 'Parmesan', qty: 80, unit: 'g', category: 'Produits laitiers', expiry: day(9) },
-    { id: uid(), name: 'Riz arborio', qty: 500, unit: 'g', category: 'Épicerie' },
-    { id: uid(), name: 'Lait', qty: 1, unit: 'L', category: 'Produits laitiers', expiry: day(1) },
-    { id: uid(), name: 'Beurre', qty: 200, unit: 'g', category: 'Produits laitiers' },
-    { id: uid(), name: 'Œufs', qty: 6, unit: 'pièce', category: 'Produits laitiers', expiry: day(12) },
-    { id: uid(), name: 'Tomates cerises', qty: 200, unit: 'g', category: 'Légumes', expiry: day(2) },
-  ]
-
-  const manualShopping: ShoppingItem[] = [
-    { id: uid(), name: 'Café moulu', qty: 1, unit: 'pièce', checked: false, manual: true },
-  ]
-
-  return { meals, fridge, manualShopping, checkedAuto: [] }
-}
+const EMPTY: AppState = { meals: [], fridge: [], dishes: [], manualShopping: [], checkedAuto: [] }
 
 function normalize(s: Partial<AppState> | null | undefined): AppState {
   return {
     meals: s?.meals ?? [],
     fridge: s?.fridge ?? [],
+    dishes: s?.dishes ?? [],
     manualShopping: s?.manualShopping ?? [],
     checkedAuto: s?.checkedAuto ?? [],
   }
@@ -172,6 +53,9 @@ interface Store {
   saveMeal: (meal: Meal) => void
   deleteMeal: (id: string) => void
   toggleCooked: (id: string) => void
+  moveMeal: (id: string, date: string, slot: Slot) => void
+  saveDish: (dish: Dish) => void
+  deleteDish: (id: string) => void
   saveFridgeItem: (item: FridgeItem) => void
   deleteFridgeItem: (id: string) => void
   adjustFridgeQty: (id: string, delta: number) => void
@@ -205,14 +89,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       setUser(res.user ?? null)
       setOffline(false)
-      const incoming = res.data
-      if (!incoming || (incoming.meals.length === 0 && incoming.fridge.length === 0)) {
-        // First run on a fresh database: seed and let it persist.
-        setState(seed())
-      } else {
-        skipNextSave.current = true // don't immediately re-PUT what we just fetched
-        setState(normalize(incoming))
-      }
+      skipNextSave.current = true // don't immediately re-PUT what we just fetched
+      setState(normalize(res.data))
       setStatus('ready')
     } catch {
       // Network/server error — fall back to the local cache if we have one.
@@ -287,6 +165,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const moveMeal = useCallback((id: string, date: string, slot: Slot) => {
+    setState((s) => ({
+      ...s,
+      meals: s.meals.map((m) => (m.id === id ? { ...m, date, slot } : m)),
+    }))
+  }, [])
+
+  const saveDish = useCallback((dish: Dish) => {
+    setState((s) => {
+      const exists = s.dishes.some((d) => d.id === dish.id)
+      return {
+        ...s,
+        dishes: exists ? s.dishes.map((d) => (d.id === dish.id ? dish : d)) : [dish, ...s.dishes],
+      }
+    })
+  }, [])
+
+  const deleteDish = useCallback((id: string) => {
+    setState((s) => ({ ...s, dishes: s.dishes.filter((d) => d.id !== id) }))
+  }, [])
+
   const saveFridgeItem = useCallback((item: FridgeItem) => {
     setState((s) => {
       const exists = s.fridge.some((f) => f.id === item.id)
@@ -359,7 +258,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return checked.length
   }, [])
 
-  const resetAll = useCallback(() => setState(seed()), [])
+  const resetAll = useCallback(() => setState(EMPTY), [])
 
   const value = useMemo<Store>(
     () => ({
@@ -373,6 +272,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveMeal,
       deleteMeal,
       toggleCooked,
+      moveMeal,
+      saveDish,
+      deleteDish,
       saveFridgeItem,
       deleteFridgeItem,
       adjustFridgeQty,
@@ -393,6 +295,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       saveMeal,
       deleteMeal,
       toggleCooked,
+      moveMeal,
+      saveDish,
+      deleteDish,
       saveFridgeItem,
       deleteFridgeItem,
       adjustFridgeQty,

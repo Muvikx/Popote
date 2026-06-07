@@ -21,7 +21,7 @@ export function QtyStepper({ value, onChange, step = 1, suffix, compact }: Props
       <button
         type="button"
         onClick={dec}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-ink/60 transition-colors hover:bg-paper hover:text-tomato active:scale-90"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-ink/60 transition-colors hover:bg-paper hover:text-tomato active:scale-90"
         aria-label="Diminuer"
       >
         <Minus size={15} />
@@ -33,7 +33,7 @@ export function QtyStepper({ value, onChange, step = 1, suffix, compact }: Props
       <button
         type="button"
         onClick={inc}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-ink/60 transition-colors hover:bg-paper hover:text-herb active:scale-90"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-ink/60 transition-colors hover:bg-paper hover:text-herb active:scale-90"
         aria-label="Augmenter"
       >
         <Plus size={15} />

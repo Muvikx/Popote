@@ -150,18 +150,18 @@ export function FridgeView() {
                             compact
                           />
                           <button
-                            className="flex h-7 w-7 items-center justify-center rounded-full text-muted opacity-0 transition-all hover:text-ink group-hover:opacity-100"
+                            className="reveal flex h-9 w-9 items-center justify-center rounded-full text-muted transition-all hover:text-ink"
                             onClick={() => setEditing(item)}
                             aria-label="Modifier"
                           >
-                            <Pencil size={14} />
+                            <Pencil size={15} />
                           </button>
                           <button
-                            className="flex h-7 w-7 items-center justify-center rounded-full text-muted opacity-0 transition-all hover:text-tomato group-hover:opacity-100"
+                            className="reveal flex h-9 w-9 items-center justify-center rounded-full text-muted transition-all hover:text-tomato"
                             onClick={() => deleteFridgeItem(item.id)}
                             aria-label="Supprimer"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </motion.div>

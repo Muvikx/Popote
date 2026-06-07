@@ -231,10 +231,10 @@ function ShoppingRow({
       {onDelete && (
         <button
           onClick={onDelete}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted opacity-0 transition-all hover:text-tomato group-hover:opacity-100"
+          className="reveal flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-all hover:text-tomato"
           aria-label="Retirer"
         >
-          <Trash2 size={14} />
+          <Trash2 size={15} />
         </button>
       )}
     </motion.li>

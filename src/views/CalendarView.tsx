@@ -1,6 +1,18 @@
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Plus, Check, CalendarDays } from 'lucide-react'
+import type { ReactNode } from 'react'
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
+import { ChevronLeft, ChevronRight, Plus, Check, CalendarDays, GripVertical } from 'lucide-react'
 import { SLOTS, type Meal, type Slot } from '../types'
 import { useStore } from '../store'
 import {
@@ -20,10 +32,18 @@ function blankMeal(date: string, slot: Slot): Meal {
   return { id: crypto.randomUUID(), date, slot, title: '', servings: 2, ingredients: [] }
 }
 
+// layout prefix keeps desktop & mobile droppable ids distinct (both are in the DOM)
+const cellId = (layout: string, iso: string, slot: Slot) => `${layout}|${iso}|${slot}`
+
 export function CalendarView() {
-  const { state, toggleCooked } = useStore()
+  const { state, toggleCooked, moveMeal } = useStore()
   const [start, setStart] = useState(() => weekStart(new Date()))
   const [editing, setEditing] = useState<Meal | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+  )
 
   const days = useMemo(() => weekDays(start), [start])
 
@@ -37,8 +57,17 @@ export function CalendarView() {
 
   const openNew = (iso: string, slot: Slot) => setEditing(blankMeal(iso, slot))
 
+  const onDragEnd = (e: DragEndEvent) => {
+    const overId = e.over?.id
+    const meal = e.active.data.current?.meal as Meal | undefined
+    if (!overId || !meal || typeof overId !== 'string') return
+    const [, iso, slot] = overId.split('|')
+    if (!iso || !slot) return
+    if (meal.date !== iso || meal.slot !== slot) moveMeal(meal.id, iso, slot as Slot)
+  }
+
   return (
-    <div>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       {/* Week navigator */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -50,7 +79,9 @@ export function CalendarView() {
             {weekLabel(start)}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            {weekCount > 0 ? `${weekCount} repas planifié(s) cette semaine` : 'Aucun repas cette semaine'}
+            {weekCount > 0
+              ? `${weekCount} repas planifié(s) cette semaine`
+              : 'Aucun repas cette semaine'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -107,12 +138,11 @@ export function CalendarView() {
         {days.map((d) => {
           const iso = toISO(d)
           const today = isToday(iso)
-          const dayMeals = SLOTS.map((s) => ({ slot: s, meals: mealsAt(iso, s.id) }))
-          const total = dayMeals.reduce((n, x) => n + x.meals.length, 0)
+          const total = SLOTS.reduce((n, s) => n + mealsAt(iso, s.id).length, 0)
           return (
-            <div key={iso} className="panel overflow-hidden">
+            <div key={iso} className="panel">
               <div
-                className={`flex items-center justify-between px-4 py-2.5 ${
+                className={`flex items-center justify-between rounded-t-xl2 px-4 py-2.5 ${
                   today ? 'bg-tomato text-paper' : 'bg-paper/60'
                 }`}
               >
@@ -123,23 +153,27 @@ export function CalendarView() {
                 <span className={`text-xs ${today ? 'text-paper/80' : 'text-muted'}`}>{total} repas</span>
               </div>
               <div className="divide-y divide-line">
-                {dayMeals.map(({ slot, meals }) => (
-                  <div key={slot.id} className="flex items-stretch gap-3 px-4 py-2.5">
+                {SLOTS.map((slot) => (
+                  <DroppableCell
+                    key={slot.id}
+                    id={cellId('m', iso, slot.id)}
+                    className="flex items-stretch gap-3 px-4 py-2.5"
+                  >
                     <div className="w-12 shrink-0 pt-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted">
                       {slot.short}
                     </div>
                     <div className="flex-1 space-y-1.5">
-                      {meals.map((m) => (
-                        <MealCard key={m.id} meal={m} onEdit={setEditing} onToggle={toggleCooked} />
+                      {mealsAt(iso, slot.id).map((m) => (
+                        <DraggableMeal key={m.id} meal={m} onEdit={setEditing} onToggle={toggleCooked} />
                       ))}
                       <button
-                        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-paper hover:text-tomato"
+                        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted transition-colors hover:bg-paper hover:text-tomato"
                         onClick={() => openNew(iso, slot.id)}
                       >
                         <Plus size={14} /> Ajouter
                       </button>
                     </div>
-                  </div>
+                  </DroppableCell>
                 ))}
               </div>
             </div>
@@ -148,7 +182,7 @@ export function CalendarView() {
       </div>
 
       <MealEditor open={!!editing} meal={editing} onClose={() => setEditing(null)} />
-    </div>
+    </DndContext>
   )
 }
 
@@ -170,42 +204,59 @@ function SlotRow({
   return (
     <>
       <div className="flex items-center pr-1">
-        <span className="text-[0.7rem] font-bold uppercase tracking-[0.14em] text-muted">
-          {slot.short}
-        </span>
+        <span className="text-[0.7rem] font-bold uppercase tracking-[0.14em] text-muted">{slot.short}</span>
       </div>
       {days.map((d) => {
         const iso = toISO(d)
         const meals = mealsAt(iso, slot.id)
         return (
-          <div
+          <DroppableCell
             key={iso}
+            id={cellId('d', iso, slot.id)}
             className={`group min-h-[92px] rounded-xl border p-1.5 transition-colors ${
               isToday(iso) ? 'border-tomato/30 bg-tomato/[0.04]' : 'border-line bg-card/60'
             }`}
           >
             <div className="space-y-1.5">
               {meals.map((m) => (
-                <MealCard key={m.id} meal={m} onEdit={onEdit} onToggle={onToggle} compact />
+                <DraggableMeal key={m.id} meal={m} onEdit={onEdit} onToggle={onToggle} compact />
               ))}
             </div>
             <button
-              className={`mt-1 flex w-full items-center justify-center gap-1 rounded-lg py-1 text-xs text-muted opacity-0 transition-all hover:text-tomato group-hover:opacity-100 ${
-                meals.length === 0 ? 'opacity-60' : ''
-              }`}
+              className="reveal mt-1 flex w-full items-center justify-center gap-1 rounded-lg py-1 text-xs text-muted transition-all hover:text-tomato"
               onClick={() => onAdd(iso, slot.id)}
               aria-label="Ajouter un repas"
             >
               <Plus size={14} />
             </button>
-          </div>
+          </DroppableCell>
         )
       })}
     </>
   )
 }
 
-function MealCard({
+function DroppableCell({
+  id,
+  className,
+  children,
+}: {
+  id: string
+  className?: string
+  children: ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className ?? ''} ${isOver ? 'rounded-xl ring-2 ring-tomato/60 ring-offset-1 ring-offset-paper' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+function DraggableMeal({
   meal,
   onEdit,
   onToggle,
@@ -216,47 +267,79 @@ function MealCard({
   onToggle: (id: string) => void
   compact?: boolean
 }) {
+  const { setNodeRef, attributes, listeners, transform, isDragging } = useDraggable({
+    id: meal.id,
+    data: { meal },
+  })
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      onClick={() => onEdit(meal)}
-      className={`cursor-pointer rounded-lg border bg-card px-2.5 py-2 shadow-sm transition-all hover:shadow-soft ${
-        meal.cooked ? 'border-herb/30 bg-herb/[0.06]' : 'border-line hover:border-tomato/40'
-      }`}
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        touchAction: 'manipulation',
+        position: isDragging ? 'relative' : undefined,
+        zIndex: isDragging ? 50 : undefined,
+      }}
     >
-      <div className="flex items-start justify-between gap-1.5">
+      <MealChip meal={meal} compact={compact} dragging={isDragging} onEdit={onEdit} onToggle={onToggle} />
+    </div>
+  )
+}
+
+function MealChip({
+  meal,
+  compact,
+  dragging,
+  onEdit,
+  onToggle,
+}: {
+  meal: Meal
+  compact?: boolean
+  dragging?: boolean
+  onEdit?: (m: Meal) => void
+  onToggle?: (id: string) => void
+}) {
+  return (
+    <div
+      onClick={onEdit ? () => onEdit(meal) : undefined}
+      className={`cursor-grab rounded-lg border bg-card px-2.5 py-2 shadow-sm transition-shadow active:cursor-grabbing ${
+        dragging ? 'shadow-lift ring-1 ring-tomato/40 rotate-[-1.5deg]' : 'hover:shadow-soft'
+      } ${meal.cooked ? 'border-herb/30 bg-herb/[0.06]' : 'border-line hover:border-tomato/40'}`}
+    >
+      <div className="flex items-start gap-1.5">
+        <GripVertical size={13} className="mt-0.5 shrink-0 text-muted/50" />
         <h4
-          className={`font-display text-[0.92rem] font-medium leading-tight ${
+          className={`flex-1 font-display text-[0.92rem] font-medium leading-tight ${
             meal.cooked ? 'text-muted line-through' : 'text-ink'
           }`}
         >
           {meal.title}
         </h4>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggle(meal.id)
-          }}
-          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
-            meal.cooked
-              ? 'border-herb bg-herb text-paper'
-              : 'border-line text-transparent hover:border-herb'
-          }`}
-          aria-label={meal.cooked ? 'Marquer non préparé' : 'Marquer préparé'}
-        >
-          <Check size={11} strokeWidth={3} />
-        </button>
+        {onToggle && (
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(meal.id)
+            }}
+            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+              meal.cooked
+                ? 'border-herb bg-herb text-paper'
+                : 'border-line text-transparent hover:border-herb'
+            }`}
+            aria-label={meal.cooked ? 'Marquer non préparé' : 'Marquer préparé'}
+          >
+            <Check size={11} strokeWidth={3} />
+          </button>
+        )}
       </div>
-      {!compact && meal.ingredients.length > 0 && (
-        <p className="mt-1 text-xs text-muted">
-          {meal.ingredients.length} ingrédient{meal.ingredients.length > 1 ? 's' : ''}
+      {meal.ingredients.length > 0 && (
+        <p className={`mt-0.5 pl-[18px] text-muted ${compact ? 'text-[0.68rem]' : 'text-xs'}`}>
+          {meal.ingredients.length} ingr{compact ? '.' : `édient${meal.ingredients.length > 1 ? 's' : ''}`}
         </p>
       )}
-      {compact && meal.ingredients.length > 0 && (
-        <p className="mt-0.5 text-[0.68rem] text-muted">{meal.ingredients.length} ingr.</p>
-      )}
-    </motion.div>
+    </div>
   )
 }

@@ -1,12 +1,14 @@
 # 🥕 Popote
 
-Un planificateur de cuisine élégant qui réunit **trois outils en un**, avec une
+Un planificateur de cuisine élégant qui réunit **quatre outils en un**, avec une
 liste de courses **calculée automatiquement**. Privé, protégé par mot de passe,
-données synchronisées entre vos appareils.
+données synchronisées entre vos appareils. **Installable comme une app (PWA)** et
+pensé pour le mobile.
 
 | Onglet | Ce qu'il fait |
 | --- | --- |
-| **Calendrier** | Planifiez vos repas sur la semaine (petit-déj / midi / soir), avec ingrédients, portions et notes. Cochez « préparé » quand c'est fait. |
+| **Calendrier** | Planifiez vos repas (petit-déj / midi / soir). **Glissez-déposez** un repas d'un jour à l'autre. Cochez « préparé » quand c'est fait. |
+| **Plats** | Bibliothèque de plats réutilisables. Lors de l'ajout d'un repas, le champ nom **recherche vos plats** et remplit les ingrédients automatiquement. |
 | **Frigo** | Inventaire de vos aliments, classés par catégorie, quantités ajustables et alertes de péremption. |
 | **Courses** | La liste se génère seule : **ingrédients des repas planifiés − ce qui est déjà dans le frigo + vos ajouts manuels**. Cochez ce que vous achetez, puis rangez-le dans le frigo en un clic. |
 
@@ -64,6 +66,7 @@ npm run dev               # http://localhost:5173 (web + API)
 | --- | --- |
 | `npm run dev` | Front + API en local |
 | `npm run db:setup` | (Ré)applique le schéma et (ré)crée les comptes définis dans `.env` |
+| `npm run db:recipes` | Charge ~100 recettes étudiantes (poêle/casserole) dans la bibliothèque |
 | `npm run build` | Build de production |
 | `npm run preview` | Prévisualise le build |
 
