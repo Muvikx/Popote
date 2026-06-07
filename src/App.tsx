@@ -84,7 +84,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="font-display text-2xl font-semibold leading-none tracking-tight sm:text-[1.7rem]">
-              Le Garde-Manger
+              Popote
             </h1>
             <p className="mt-1 text-sm text-muted">Repas, frigo &amp; courses, sans rien oublier.</p>
           </div>

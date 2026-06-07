@@ -5,7 +5,7 @@ import { mergeIntoFridge, type DerivedShoppingItem } from './lib/shopping'
 import { addDays, toISO } from './lib/date'
 import { apiGetState, apiLogin, apiLogout, apiPutState } from './lib/api'
 
-const CACHE_KEY = 'garde-manger:cache'
+const CACHE_KEY = 'popote:cache'
 const SAVE_DEBOUNCE = 800
 
 function uid() {

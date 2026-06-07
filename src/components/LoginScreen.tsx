@@ -37,7 +37,7 @@ export function LoginScreen({ onLogin }: Props) {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-tomato text-paper shadow-lift">
             <Carrot size={30} strokeWidth={2} />
           </div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Le Garde-Manger</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Popote</h1>
           <p className="mt-1 text-sm text-muted">Connectez-vous pour retrouver vos repas.</p>
         </div>
 
