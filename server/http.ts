@@ -1,4 +1,4 @@
-import { verifySession } from './auth'
+import { verifySession } from './auth.js'
 
 export function parseCookies(header?: string | null): Record<string, string> {
   const out: Record<string, string> = {}

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { handleGetState, handlePutState } from '../server/handlers'
+import { handleGetState, handlePutState } from '../server/handlers.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cookie = req.headers.cookie

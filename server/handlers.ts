@@ -1,6 +1,6 @@
-import { db, findUser, getState, putState } from './core'
-import { signSession, verifyPassword } from './auth'
-import { clearCookie, getEmailFromCookie, sessionCookie } from './http'
+import { db, findUser, getState, putState } from './core.js'
+import { signSession, verifyPassword } from './auth.js'
+import { clearCookie, getEmailFromCookie, sessionCookie } from './http.js'
 
 export interface HandlerResult {
   status: number

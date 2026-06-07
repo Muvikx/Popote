@@ -7,8 +7,8 @@
  * Local dev writes to ./local.db. Production targets Turso via
  * TURSO_DATABASE_URL + TURSO_AUTH_TOKEN.
  */
-import { ensureSchema, getDb, upsertUser } from '../server/core'
-import { hashPassword } from '../server/auth'
+import { ensureSchema, getDb, upsertUser } from '../server/core.js'
+import { hashPassword } from '../server/auth.js'
 
 try {
   process.loadEnvFile('.env')

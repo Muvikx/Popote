@@ -3,7 +3,7 @@
  * exact same handlers. Vite proxies /api here during `npm run dev`.
  */
 import http from 'node:http'
-import { handleGetState, handleLogin, handleLogout, handlePutState, type HandlerResult } from './handlers'
+import { handleGetState, handleLogin, handleLogout, handlePutState, type HandlerResult } from './handlers.js'
 
 try {
   // Node >= 20.12
